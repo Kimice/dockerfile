@@ -1,0 +1,56 @@
+FROM floydhub/dl-base:3.1.0-py2.25
+MAINTAINER Floyd Labs "support@floydhub.com"
+
+ARG TENSORFLOW_VERSION=v1.8.0
+ARG KERAS_VERSION=2.1.6
+
+RUN git config --global http.postBuffer 524288000
+RUN git clone https://github.com/tensorflow/tensorflow.git --branch ${TENSORFLOW_VERSION} --single-branch --depth 1
+WORKDIR /tensorflow
+
+ENV CI_BUILD_PYTHON python
+
+
+
+# install mock for py2 build
+RUN python --version 2>&1 | grep 'Python 2' \
+    && pip --no-cache-dir install \
+        mock \
+        && rm -rf /pip_pkg \
+        && rm -rf /tmp/* \
+        && rm -rf /root/.cache \
+    || true
+
+
+RUN apt-get install g++
+
+
+# NOTE: This command uses special flags to build an optimized image for AWS machines.
+# This image might *NOT* work on other machines
+# Clean up pip wheel and Bazel cache when done.
+RUN tensorflow/tools/ci_build/builds/configured CPU
+
+RUN bazel build -c opt \
+        --cxxopt="-D_GLIBCXX_USE_CXX11_ABI=0" \
+         \
+        --verbose_failures \
+        --local_resources 2048,.5,1.0 \
+        tensorflow/tools/pip_package:build_pip_package
+
+RUN bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/pip \
+    && pip --no-cache-dir install --upgrade /tmp/pip/tensorflow-*.whl \
+    && rm -rf /pip_pkg \
+    && rm -rf /tmp/* \
+    && rm -rf /root/.cache \
+    && cd / && rm -rf tensorflow
+
+WORKDIR /
+
+# Install Keras and tflearn
+# TODO: move h5py into dl-python base
+RUN pip --no-cache-dir install \
+        git+git://github.com/fchollet/keras.git@${KERAS_VERSION} \
+        tflearn==0.3.2 \
+    && rm -rf /pip_pkg \
+    && rm -rf /tmp/* \
+    && rm -rf /root/.cache

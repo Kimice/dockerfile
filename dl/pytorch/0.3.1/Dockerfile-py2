@@ -1,0 +1,10 @@
+FROM floydhub/tensorflow:1.7.0-py2_aws.29
+MAINTAINER Floyd Labs "support@floydhub.com"
+
+RUN pip install --upgrade pip
+
+RUN pip --no-cache-dir install --upgrade torchvision==0.2.0
+
+
+
+RUN pip --no-cache-dir install --upgrade tensorboardX==1.1

@@ -44,6 +44,8 @@ RUN set -ex \
 	&& gnuArch="$(dpkg-architecture --query DEB_BUILD_GNU_TYPE)" \
 	&& ./configure \
 		--build="$gnuArch" \
+		--with-tcltk-includes='-I/usr/include/tk -I/usr/include/tcl' \
+		--with-tcltk-libs='/usr/lib/x86_64-linux-gnu/libtcl.so /usr/lib/x86_64-linux-gnu/libtk.so' \
 {%- if python_version.startswith('3') %}
 		--enable-loadable-sqlite-extensions \
 {%- endif %}
@@ -79,7 +81,7 @@ RUN cd /usr/local/bin \
 
 
 # if this is called "PIP_VERSION", pip explodes with "ValueError: invalid truth value '<VERSION>'"
-ENV PYTHON_PIP_VERSION 9.0.1
+ENV PYTHON_PIP_VERSION 9.0.3
 
 RUN set -ex; \
     \

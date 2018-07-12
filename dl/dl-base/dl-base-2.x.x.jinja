@@ -1,6 +1,19 @@
 {% extends "base.jinja" %}
 
 {% block content %}
+
+# Script to install the NodeSource Node.js 8.x LTS Carbon
+# repo onto a Debian or Ubuntu system.
+RUN wget -qO- https://deb.nodesource.com/setup_8.x | bash -
+
+# Install Nodejs and Add Tensorboard
+RUN apt-get update && apt-get install -y supervisor nodejs\
+  && apt-get clean \
+  && apt-get autoremove \
+  && rm -rf /var/cache/apt/archives/* \
+  && rm -rf /var/lib/apt/lists/*
+COPY tensorboard/tensorboard.conf /etc/supervisor/conf.d/
+
 # graphviz for visualization
 RUN apt-get update && apt-get install -y \
         graphviz \
@@ -9,13 +22,13 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /var/cache/apt/archives/*
 
-
 RUN pip --no-cache-dir install \
         pydot \
         dlib \
-        gym[all] \
         incremental \
         nltk \
+        jupyterlab==0.31.12 \
+        gym[atari,box2d,classic_control] \
 {%- if cpver == 'py2' %}
         pattern \
 {%- endif %}
@@ -24,16 +37,17 @@ RUN pip --no-cache-dir install \
         spacy \
         tqdm \
         wheel \
-        kaggle-cli \
+        kaggle \
+        h5py==2.8.0rc1 \
+        seaborn \
+        plotly \
+        annoy \
     && rm -rf /tmp/* /var/tmp/*
 
 
-# Install OpenAI Universe
-RUN git clone --branch v0.21.3 https://github.com/openai/universe.git \
-    && cd universe \
-    && pip install . \
-    && cd .. \
-    && rm -rf universe
+# Install and Enable jupyter-widgets
+# jupyterlab-manager@0.35 doesn't work on JL v0.31.12
+RUN jupyter labextension install @jupyter-widgets/jupyterlab-manager@0.34
 
 # Install xgboost
 RUN git clone --recursive https://github.com/dmlc/xgboost \
