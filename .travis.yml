@@ -1,0 +1,10 @@
+language: python
+python:
+    - "2.7"
+
+before_script:
+    - bash ci/install.sh
+    - python ci/prepare.py
+
+script:
+    - bash ci/build_images.sh
